@@ -1,44 +1,37 @@
-import css from 'components/App.module.css';
-import { ContactForm } from './ContactForm/ContactForm';
-import { Filter } from './Filter/Filter';
-import { ContactList } from './ContactList/ContactList';
-import { useSelector, useDispatch } from 'react-redux';
-import { useEffect } from 'react';
-import { selectError, selectIsLoading } from '../redux/selectors/selectors';
-import { ThreeDots } from 'react-loader-spinner';
-import { fetchContacts } from "../redux/operations";
-import { getAllContacts } from 'redux/selectors/selectors';
+import { useEffect, lazy } from 'react';
+import { useDispatch } from 'react-redux';
+import { Route, Routes, Navigate } from 'react-router-dom';
 
+import PrivateRoute from 'components/PrivateRoute';
+import RestrictedRoute from 'components/RestrictedRoute';
+import { current } from 'redux/auth/auth-operations';
+import SharedLayout from 'components/SharedLayout/SharedLayout';
+
+const HomePage = lazy(() => import('pages/Home'));
+const RegisterPage = lazy(() => import('pages/Register'));
+const LoginPage = lazy(() => import('pages/Login'));
+const ContactsPage = lazy(() => import('pages/Contacts'));
 
 export const App = () => {
-  const contacts = useSelector(getAllContacts);
-  const error = useSelector(selectError);
-  const isLoading = useSelector(selectIsLoading);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(fetchContacts());
+    dispatch(current);
   }, [dispatch]);
 
-
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: 40,
-        color: '#010101'
-      }}
-    >
-      <div>
-        <h1 className={css.title}>Phonebook</h1>
-        <ContactForm />
-        <h2 className={css.title}>Contacts</h2>
-        <Filter />
-        {isLoading&&!error?<div className={css.loader}><ThreeDots /></div>:<ContactList />}
-        {!contacts.length && <p className={css.messageUser}>There are no contacts in the Phonebook</p>}
-      </div>
-    </div>
+    <Routes>
+      <Route path="/" element={<SharedLayout />}>
+        <Route index element={<HomePage />} />
+        <Route element={<PrivateRoute />}>
+          <Route path="/contacts" element={<ContactsPage />} />
+        </Route>
+        <Route element={<RestrictedRoute />}>
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace={true} />} />
+      </Route>
+    </Routes>
   );
 };
